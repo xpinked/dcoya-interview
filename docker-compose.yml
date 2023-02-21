@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "3"
+        max-size: "100m"
+    environment:
+      - "MONGO_INITDB_ROOT_USERNAME=root"
+      - "MONGO_INITDB_ROOT_PASSWORD=my_very_secret_password"
+    deploy:
+      resources:
+        limits:
+          memory: 1GB
+    volumes:
+      - "mongo-volume:/data/db"
+    restart: always
+    ports:
+      - "27017:27017"
+
+volumes:
+  mongo-volume:
+    external: true
+
+networks:
+  default:
+    name: pinkie

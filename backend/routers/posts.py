@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, status
 
 from models.post import Post, UpdatePost
 from models.response import Response
-from models.user import User
+from models.user import UserData
 from utils.security.auth import Auth
 
 
@@ -24,8 +24,10 @@ router = APIRouter()
 )
 async def add_new_post(
     post: Post,
-    current_user: User = Depends(Auth.get_current_user),
+    current_user: UserData = Depends(Auth.get_current_user),
 ) -> Response:
+
+    current_user_id = PydanticObjectId(current_user.id)
 
     is_post_exist = Post.title == post.title
 
@@ -39,7 +41,7 @@ async def add_new_post(
     if current_user.id is None:
         raise Auth.credentials_exception
 
-    post.creator_id = current_user.id
+    post.creator_id = current_user_id
 
     await post.create()
 
@@ -49,7 +51,7 @@ async def add_new_post(
     )
 
 
-@ router.get(
+@router.get(
     path='/',
     status_code=status.HTTP_200_OK,
     response_description='Get all posts',
@@ -59,7 +61,7 @@ async def add_new_post(
     ]
 )
 async def get_all_posts(
-    current_user=Depends(Auth.get_current_user)
+    current_user: UserData = Depends(Auth.get_current_user)
 ) -> Response:
 
     posts = await Post.find_all(
@@ -76,7 +78,7 @@ async def get_all_posts(
     )
 
 
-@ router.get(
+@router.get(
     path='/{id}',
     status_code=status.HTTP_200_OK,
     response_description='Get one Post by id',
@@ -87,7 +89,7 @@ async def get_all_posts(
 )
 async def get_post_by_id(
     id: PydanticObjectId,
-    current_user=Depends(Auth.get_current_user),
+    current_user: UserData = Depends(Auth.get_current_user),
 ) -> Response:
 
     post = await Post.get(id)
@@ -102,7 +104,7 @@ async def get_post_by_id(
     )
 
 
-@ router.delete(
+@router.delete(
     path='/{id}',
     status_code=status.HTTP_200_OK,
     response_description='Delete one Post by id',
@@ -113,18 +115,17 @@ async def get_post_by_id(
 )
 async def delete_post_by_id(
     id: PydanticObjectId,
-    current_user=Depends(Auth.get_current_user),
+    current_user: UserData = Depends(Auth.get_current_user),
 ) -> Response:
 
-    if current_user.id is None:
-        raise Auth.credentials_exception
+    current_user_id = PydanticObjectId(current_user.id)
 
     post = await Post.get(id)
 
     if post is None:
         raise posts_exceptions.PostDoesNotExist()
 
-    if post.creator_id != current_user.id:
+    if post.creator_id != current_user_id:
         raise posts_exceptions.PostDeletionNotAllowed()
 
     await post.delete()
@@ -135,7 +136,7 @@ async def delete_post_by_id(
     )
 
 
-@ router.put(
+@router.put(
     path='/{id}',
     status_code=status.HTTP_200_OK,
     response_description='Delete one Post by id',
@@ -147,7 +148,7 @@ async def delete_post_by_id(
 async def update_post_by_id(
     id: PydanticObjectId,
     updated_post: UpdatePost,
-    current_user=Depends(Auth.get_current_user),
+    current_user: UserData = Depends(Auth.get_current_user),
 ) -> Response:
 
     if current_user.id is None:
@@ -158,10 +159,14 @@ async def update_post_by_id(
     if existing_post is None:
         raise posts_exceptions.PostDoesNotExist()
 
-    if existing_post.creator_id != current_user.id:
+    if existing_post.creator_id != PydanticObjectId(current_user.id):
         raise posts_exceptions.PostUpdateNotAllowed()
 
-    if Post.find(Post.title == updated_post.title) is not None:
+    existing_post_with_same_title = await Post.find_one(
+        Post.title == updated_post.title
+    )
+
+    if existing_post_with_same_title is not None:
         raise posts_exceptions.PostAlreadyExists()
 
     updated_post_dict = updated_post.dict(

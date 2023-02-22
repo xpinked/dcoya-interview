@@ -4,9 +4,11 @@ import exceptions.posts_exceptions as posts_exceptions
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, status
 
+from models.user import UserData
 from models.like import Like
 from models.post import Post
 from models.response import Response
+
 from utils.security.auth import Auth
 
 router = APIRouter()
@@ -20,27 +22,30 @@ router = APIRouter()
 )
 async def add_like_by_post_id(
     post_id: PydanticObjectId,
-    current_user=Depends(Auth.get_current_user),
+    current_user: UserData = Depends(Auth.get_current_user),
 ) -> Response:
 
-    if current_user.id is None:
-        raise Auth.credentials_exception
+    current_user_id = PydanticObjectId(current_user.id)
 
-    like = Like(
-        liked_by=PydanticObjectId(current_user.id),
-        doc_reference_id=post_id,
+    existing_post = await Post.find_one(
+        Post.id == post_id,
     )
 
-    if like is None:
-        raise likes_exceptions.LikeDoesNotExist()
+    if existing_post is None:
+        raise posts_exceptions.PostDoesNotExist()
 
     existing_like = await Like.find_one(
-        Like.doc_reference_id == like.doc_reference_id,
-        Like.liked_by == like.liked_by,
+        Like.doc_reference_id == post_id,
+        Like.liked_by == current_user_id,
     )
 
     if existing_like is not None:
         raise likes_exceptions.LikeAlreadyExists()
+
+    like = Like(
+        liked_by=current_user_id,
+        doc_reference_id=post_id,
+    )
 
     await like.create()
 
@@ -58,30 +63,28 @@ async def add_like_by_post_id(
 )
 async def remove_like_by_post_id(
     post_id: PydanticObjectId,
-    current_user=Depends(Auth.get_current_user),
+    current_user: UserData = Depends(Auth.get_current_user),
 ) -> Response:
 
-    if current_user.id is None:
-        raise Auth.credentials_exception
+    current_user_id = PydanticObjectId(current_user.id)
 
-    like = Like(
-        liked_by=PydanticObjectId(current_user.id),
-        doc_reference_id=post_id,
+    existing_post = await Post.find_one(
+        Post.id == post_id,
     )
 
-    if like is None:
-        raise likes_exceptions.LikeDoesNotExist()
-
-    if like.liked_by != current_user.id:
-        raise likes_exceptions.NotAllowedToRemoveLike()
+    if existing_post is None:
+        raise posts_exceptions.PostDoesNotExist()
 
     existing_like = await Like.find_one(
-        Like.doc_reference_id == like.doc_reference_id,
-        Like.liked_by == like.liked_by,
+        Like.doc_reference_id == post_id,
+        Like.liked_by == current_user_id,
     )
 
     if existing_like is None:
         raise likes_exceptions.LikeDoesNotExist()
+
+    if existing_like.liked_by != current_user_id:
+        raise likes_exceptions.NotAllowedToRemoveLike()
 
     await existing_like.delete()
 
@@ -99,7 +102,7 @@ async def remove_like_by_post_id(
 )
 async def gets_likes_by_post_id(
     post_id: PydanticObjectId,
-    current_user=Depends(Auth.get_current_user),
+    current_user: UserData = Depends(Auth.get_current_user),
 ) -> Response:
 
     existing_post = await Post.get(post_id)

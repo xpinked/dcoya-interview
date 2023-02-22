@@ -38,9 +38,6 @@ async def add_new_post(
     if existing_post is not None:
         raise posts_exceptions.PostAlreadyExists()
 
-    if current_user.id is None:
-        raise Auth.credentials_exception
-
     post.creator_id = current_user_id
 
     await post.create()
@@ -64,9 +61,7 @@ async def get_all_posts(
     current_user: UserData = Depends(Auth.get_current_user)
 ) -> Response:
 
-    posts = await Post.find_all(
-        # projection_model=ShowPost,
-    ).to_list()
+    posts = await Post.find_all().to_list()
 
     return Response(
         status_code=status.HTTP_200_OK,
@@ -151,15 +146,14 @@ async def update_post_by_id(
     current_user: UserData = Depends(Auth.get_current_user),
 ) -> Response:
 
-    if current_user.id is None:
-        raise Auth.credentials_exception
+    current_user_id = PydanticObjectId(current_user.id)
 
     existing_post = await Post.get(id)
 
     if existing_post is None:
         raise posts_exceptions.PostDoesNotExist()
 
-    if existing_post.creator_id != PydanticObjectId(current_user.id):
+    if existing_post.creator_id != current_user_id:
         raise posts_exceptions.PostUpdateNotAllowed()
 
     existing_post_with_same_title = await Post.find_one(

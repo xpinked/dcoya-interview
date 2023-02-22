@@ -2,11 +2,11 @@ from beanie import PydanticObjectId
 from datetime import datetime, timedelta
 from fastapi import HTTPException, status, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+from jose import JWTError, jwt, ExpiredSignatureError
 
 from configurations.config import settings
-from models.user import User
-from models.token import TokenData, EncodedToken
+from models.user import UserData
+from models.token import EncodedToken, DecodedToken
 
 
 class AuthBearer(HTTPBearer):
@@ -22,10 +22,16 @@ class Auth:
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    expired_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Your token is expired please authenticate again",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
     @classmethod
     async def encode_token(
         cls,
-        data: TokenData,
+        data: UserData,
     ) -> str:
 
         encoded_token = EncodedToken(
@@ -33,7 +39,8 @@ class Auth:
                 minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
             ),
             iat=datetime.utcnow(),
-            sub=data.id,
+            sub=str(data.id),
+            data=data,
         )
 
         return jwt.encode(
@@ -46,7 +53,7 @@ class Auth:
     async def decode_token(
         cls,
         token: str,
-    ) -> TokenData:
+    ) -> DecodedToken:
 
         try:
             payload = jwt.decode(
@@ -55,12 +62,12 @@ class Auth:
                 algorithms=settings.JWT_ALGORITHM,
             )
 
-            sub = str(payload.get('sub'))
+            decoded_token = DecodedToken(**payload)
 
-            if sub is None:
-                raise cls.credentials_exception
+            return decoded_token
 
-            return TokenData(id=sub)
+        except ExpiredSignatureError:
+            raise cls.expired_exception
 
         except JWTError:
             raise cls.credentials_exception
@@ -69,24 +76,16 @@ class Auth:
     async def get_current_user(
         cls,
         auth: HTTPAuthorizationCredentials = Security(auth_scheme),
-    ) -> User:
+    ) -> UserData:
 
         token_data = await cls.decode_token(auth.credentials)
 
-        user = await User.get(
-            document_id=PydanticObjectId(token_data.id),
-        )
-
-        if user is None:
-            raise cls.credentials_exception
-
-        return user
+        return token_data.data
 
     @classmethod
     async def create_access_token(
         cls,
-        data: TokenData,
-        expires_delta: timedelta | None = None
+        data: UserData,
     ) -> str:
 
         encoded_jwt = await cls.encode_token(data=data)

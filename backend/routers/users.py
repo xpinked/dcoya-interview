@@ -1,10 +1,12 @@
 import exceptions.users_exceptions as users_exceptions
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, status
-from utils.security.hash import Hash
+from fastapi import APIRouter, Depends, status
 
-from models.user import User, ShowUser
+from utils.security.hash import Hash
+from utils.security.auth import Auth
+
+from models.user import User, ShowUser, UserData
 from models.response import Response
 
 
@@ -44,7 +46,24 @@ async def add_user(
     )
 
 
-@ router.get(
+@router.get(
+    path='/me',
+    status_code=status.HTTP_200_OK,
+    response_description='Get currently logged in user',
+    response_model_exclude_none=True,
+)
+async def get_current_active_user(
+    current_user: UserData = Depends(Auth.get_current_user)
+) -> Response:
+
+    return Response(
+        status_code=status.HTTP_200_OK,
+        message='Current active user details',
+        data=current_user,
+    )
+
+
+@router.get(
     path='/',
     status_code=status.HTTP_200_OK,
     response_description='Get all Users',
@@ -67,7 +86,7 @@ async def get_all_users(
     )
 
 
-@ router.get(
+@router.get(
     path='/{id}',
     status_code=status.HTTP_200_OK,
     response_description='Get one User by id',

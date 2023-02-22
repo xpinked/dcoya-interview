@@ -6,7 +6,10 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 
-class Role(enum.Enum):
+class Role(
+    str,
+    enum.Enum
+):
     VIEWER = 'viewer'
     CREATOR = 'creator'
     ADMIN = 'admin'
@@ -54,7 +57,15 @@ class User(Document):
         }
 
 
+class UserData(BaseModel):
+    id: str
+    name: str
+    user_name: str
+    role: Role
+
+
 class ShowUser(BaseModel):
     id: PydanticObjectId = Field(alias='_id')
     name: str
     user_name: str
+    role: Role

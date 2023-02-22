@@ -21,6 +21,8 @@ I have created 4 main tag routes according to REST architecture.
 
 ```GET /api/v1/users/{id}``` - To get one user by its id in the DB
 
+```GET /api/v1/users/me``` - To get the current active logged in user
+
 ### Posts (Protected routes)
 
 ```GET /api/v1/posts/``` - To get all posts

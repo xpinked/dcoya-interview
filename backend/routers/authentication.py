@@ -1,9 +1,9 @@
 from fastapi import APIRouter, status
 
 
-from models.token import Token, TokenData
+from models.token import Token
 from models.auth import AuthDetails
-from models.user import User
+from models.user import User, UserData
 
 from utils.security.auth import Auth
 from utils.security.hash import Hash
@@ -13,13 +13,13 @@ router = APIRouter()
 
 async def get_validated_user(
     authentication_details: AuthDetails,
-) -> User | None:
+) -> UserData | None:
 
     user = await User.find_one(
         User.user_name == authentication_details.user_name,
     )
 
-    if not user:
+    if not user or not user.id:
         return None
 
     is_verified_password = Hash.verify_password(
@@ -30,7 +30,12 @@ async def get_validated_user(
     if not is_verified_password:
         return None
 
-    return user
+    return UserData(
+        id=str(user.id),
+        name=user.name,
+        user_name=user.user_name,
+        role=user.role
+    )
 
 
 @ router.post(
@@ -49,12 +54,8 @@ async def login(
     if valid_user is None:
         raise Auth.credentials_exception
 
-    token_data = TokenData(
-        id=str(valid_user.id),
-    )
-
     access_token = await Auth.create_access_token(
-        data=token_data,
+        data=valid_user,
     )
 
     return Token(

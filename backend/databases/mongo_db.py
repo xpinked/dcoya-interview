@@ -1,7 +1,8 @@
-from beanie import init_beanie
+import models
 import motor.motor_asyncio
 
-import models
+from beanie import init_beanie
+
 from configurations.config import settings
 
 

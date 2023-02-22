@@ -1,3 +1,5 @@
+import exceptions.users_exceptions as users_exceptions
+
 from beanie import PydanticObjectId
 from fastapi import APIRouter, status
 from utils.security.hash import Hash
@@ -5,7 +7,6 @@ from utils.security.hash import Hash
 from models.user import User, ShowUser
 from models.response import Response
 
-import exceptions.users_exceptions as users_exceptions
 
 router = APIRouter()
 

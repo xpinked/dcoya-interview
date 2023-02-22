@@ -49,6 +49,7 @@ class User(Document):
                 'name': 'Israel Israeli',
                 'user_name': 'Israeli123',
                 'password': 'VerySecretPassword',
+                'role': 'creator'
             }
         }
 

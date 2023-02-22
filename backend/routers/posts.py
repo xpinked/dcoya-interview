@@ -1,8 +1,8 @@
-from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, status
-
 import exceptions.posts_exceptions as posts_exceptions
 import utils.security.permissions.users as permissions
+
+from beanie import PydanticObjectId
+from fastapi import APIRouter, Depends, status
 
 from models.post import Post, UpdatePost
 from models.response import Response

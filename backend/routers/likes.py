@@ -75,12 +75,9 @@ async def remove_like_by_post_id(
     if like.liked_by != current_user.id:
         raise likes_exceptions.NotAllowedToRemoveLike()
 
-    is_being_liked =  \
-        Like.doc_reference_id == like.doc_reference_id and \
-        Like.liked_by == like.liked_by
-
     existing_like = await Like.find_one(
-        is_being_liked,
+        Like.doc_reference_id == like.doc_reference_id,
+        Like.liked_by == like.liked_by,
     )
 
     if existing_like is None:

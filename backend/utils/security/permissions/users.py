@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException
-from utils.security.auth import Auth
 
+from utils.security.auth import Auth
 from models.user import User, Role
 
 

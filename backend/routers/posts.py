@@ -51,7 +51,7 @@ async def add_new_post(
             'created_posts': 1,
             'sharing_url': {
                 'method': 'GET',
-                'url': f'{request.url}'
+                'url': f'{request.url}/{post.id}'
             }
         }
     )

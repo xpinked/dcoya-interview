@@ -10,7 +10,7 @@ class PostAlreadyExists(
     def __init__(self) -> None:
         response = Response(
             status_code=status.HTTP_400_BAD_REQUEST,
-            message='Post already exists',
+            message='Post already exists, try different title',
         )
 
         super().__init__(

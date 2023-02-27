@@ -8,7 +8,7 @@ from typing import Optional
 
 class Role(
     str,
-    enum.Enum
+    enum.Enum,
 ):
     VIEWER = 'viewer'
     CREATOR = 'creator'

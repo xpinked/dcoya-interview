@@ -1,15 +1,18 @@
 import fastapi
 
+
 from fastapi.middleware.cors import CORSMiddleware
 
 from configurations.config import settings
+from databases import DatabaseClient
 from middlewares.logger import LoggingMiddleware
-from databases import mongo_db
 
 from routers import api_routers, authentication
 
 
 def get_app(
+    database_client: DatabaseClient,
+    database_name: str,
 ) -> fastapi.FastAPI:
 
     app = fastapi.FastAPI()
@@ -36,6 +39,8 @@ def get_app(
 
     @app.on_event("startup")
     async def startup() -> None:
-        await mongo_db.MongoDBClient.init_db()
+        await database_client.init_db(
+            database_name=database_name,
+        )
 
     return app

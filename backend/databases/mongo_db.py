@@ -1,48 +1,43 @@
-import models
-import motor.motor_asyncio
-
 from beanie import init_beanie
+from typing import Optional, Any
 
-from configurations.config import settings
+from databases.database import DatabaseClient
 
 
-class MongoDBClient:
-    client = motor.motor_asyncio.AsyncIOMotorClient(
-        host=settings.MONGO_HOST,
-        port=settings.MONGO_PORT,
-        username=settings.MONGO_USER,
-        password=settings.MONGO_PASSWORD,
-    )
+class BeanieClient(
+    DatabaseClient,
+):
 
-    document_models = [
-        models.post.Post,
-        models.user.User,
-        models.like.Like,
-    ]
+    def __init__(
+        self,
+        client,
+        models: Optional[list[Any]] = None,
+    ) -> None:
+        self.client = client
 
-    @classmethod
+        self.models = models
+
     async def init_db(
-        cls,
+        self,
+        database_name: str,
     ) -> None:
 
-        database = cls.client[settings.MONGO_DB_NAME]
+        self.database = await self.get_database(database_name)
 
         await init_beanie(
-            database=database,
-            document_models=cls.document_models
+            database=self.database,
+            document_models=self.models
         )
 
-    @classmethod
-    def get_collection(
-        cls,
+    async def get_collection(
+        self,
         collection_name: str,
-        database_name: str = settings.MONGO_DB_NAME,
+        database_name: str,
     ):
-        return cls.client[database_name][collection_name]
+        return self.client[database_name][collection_name]
 
-    @classmethod
-    def get_database(
-        cls,
-        database_name: str = settings.MONGO_DB_NAME,
+    async def get_database(
+        self,
+        database_name: str,
     ):
-        return cls.client[database_name]
+        return self.client[database_name]

@@ -2,7 +2,7 @@ import exceptions.posts_exceptions as posts_exceptions
 import utils.security.permissions.users as permissions
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 
 from models.post import Post, UpdatePost
 from models.response import Response
@@ -23,6 +23,7 @@ router = APIRouter()
     ],
 )
 async def add_new_post(
+    request: Request,
     post: Post,
     current_user: UserData = Depends(Auth.get_current_user),
 ) -> Response:
@@ -45,6 +46,14 @@ async def add_new_post(
     return Response(
         status_code=status.HTTP_201_CREATED,
         message='Post created succefully',
+        data=post,
+        additional_info={
+            'created_posts': 1,
+            'sharing_url': {
+                'method': 'GET',
+                'url': f'{request.url}'
+            }
+        }
     )
 
 
@@ -128,6 +137,7 @@ async def delete_post_by_id(
     return Response(
         status_code=status.HTTP_200_OK,
         message=f'Succefully deleted Post with id {id}',
+        data=post,
     )
 
 

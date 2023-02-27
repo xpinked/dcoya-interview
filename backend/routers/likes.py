@@ -52,6 +52,7 @@ async def add_like_by_post_id(
     return Response(
         status_code=status.HTTP_201_CREATED,
         message=f'Like for post {like.doc_reference_id} added succefully',
+        data=like,
     )
 
 
@@ -91,6 +92,7 @@ async def remove_like_by_post_id(
     return Response(
         status_code=status.HTTP_201_CREATED,
         message=f'Like for post {post_id} removed succefully',
+        data=existing_like,
     )
 
 

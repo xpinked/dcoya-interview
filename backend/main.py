@@ -3,7 +3,7 @@ import uvicorn
 
 import models
 
-from app import get_app
+from my_app import get_app
 from configurations.config import settings
 from databases import BeanieClient
 

@@ -38,11 +38,12 @@ async def add_user(
         password=user.password,
     )
 
-    await user.create()
+    created_user = await user.create()
 
     return Response(
         status_code=status.HTTP_201_CREATED,
         message=f'User {user.user_name} created succefully',
+        data=created_user
     )
 
 
